@@ -1,4 +1,5 @@
-﻿using NUnit.Framework;
+﻿using FluentAssertions;
+using NUnit.Framework;
 using NUnit.Framework.Legacy;
 
 namespace HomeExercise.Tasks.ObjectComparison;
@@ -14,16 +15,14 @@ public class ObjectComparison
         var expectedTsar = new Person("Ivan IV The Terrible", 54, 170, 70,
             new Person("Vasili III of Russia", 28, 170, 60, null));
 
-        // Перепишите код на использование Fluent Assertions.
-        ClassicAssert.AreEqual(actualTsar.Name, expectedTsar.Name);
-        ClassicAssert.AreEqual(actualTsar.Age, expectedTsar.Age);
-        ClassicAssert.AreEqual(actualTsar.Height, expectedTsar.Height);
-        ClassicAssert.AreEqual(actualTsar.Weight, expectedTsar.Weight);
+        // Переписанный код с использованием Fluent Assertions.
 
-        ClassicAssert.AreEqual(expectedTsar.Parent!.Name, actualTsar.Parent!.Name);
-        ClassicAssert.AreEqual(expectedTsar.Parent.Age, actualTsar.Parent.Age);
-        ClassicAssert.AreEqual(expectedTsar.Parent.Height, actualTsar.Parent.Height);
-        ClassicAssert.AreEqual(expectedTsar.Parent.Parent, actualTsar.Parent.Parent);
+        actualTsar.Should()
+            .BeEquivalentTo(expectedTsar,
+            options => options
+                        //.AllowingInfiniteRecursion()
+                        .Excluding(person => person.Id)
+                        .Excluding(person => person.Parent.Id));
     }
 
     [Test]
@@ -35,6 +34,13 @@ public class ObjectComparison
             new Person("Vasili III of Russia", 28, 170, 60, null));
 
         // Какие недостатки у такого подхода? 
+
+        // При добавлении новых полей, свойств нужно будет переписывать проверку в методе AreEqual:
+        // вручную прописывать каждое поле, свойство и сравнивать его с ожидаемым.
+        // В моем решении эта проблема решена - FluentAssertions рекурсивно проходит
+        // по полям и свойствам объекта, сравнивая их, но игнорирует ID царя и его родителя, как и в исходном коде.
+        // Если династия многолетняя, и царь окажется далее, чем в 10 поколении от своего родоначальника,
+        // то можно включить бесконечную рекурсию, т.к. FluentAssertions не спускается ниже 10 уровня рекурсии.
         ClassicAssert.True(AreEqual(actualTsar, expectedTsar));
     }
 
