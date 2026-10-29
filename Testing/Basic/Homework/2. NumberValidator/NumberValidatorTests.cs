@@ -8,7 +8,7 @@ public class NumberValidatorTests
 {
     [TestCase("0.0", false, "no fraction is expected")]
     [TestCase("0", true, "there is no fraction")]
-    public void NotValid_When_Fraction_Given_But_Not_Expected(string number, bool result, string explanation)
+    public void IsValidNumber_When_ScaleIsZero(string number, bool result, string explanation)
     {
         var validator = new NumberValidator(3, 0, false);
 
@@ -18,7 +18,7 @@ public class NumberValidatorTests
     [TestCase("1", true, "scale limit is not exceeded")]
     [TestCase("1.00", true, "scale limit is not exceeded")]
     [TestCase("1.000", false, "scale limit is exceeded")]
-    public void NotValid_When_Scale_Is_Exceeded(string number, bool result, string because)
+    public void Invalid_When_ScaleIsExceeded(string number, bool result, string because)
     {
         var validator = new NumberValidator(5, 2, true);
         validator.IsValidNumber(number).Should().Be(result, because);
@@ -28,7 +28,7 @@ public class NumberValidatorTests
     [TestCase("1.0", true, "int part length and fraction part length give sum of 2, which is not greater than precision", 3)]
     [TestCase("100", true, "int part length is 3, which is not greater than precision", 3)]
     [TestCase("1000", false, "int part length is 4, which is greater than precision", 3)]
-    public void Invalid_When_Precision_Is_Exceeded(string number, bool result, string because, int precision)
+    public void Invalid_When_PrecisionIsExceeded(string number, bool result, string because, int precision)
     {
         var validator = new NumberValidator(precision, 2, true);
 
@@ -36,7 +36,7 @@ public class NumberValidatorTests
     }
 
     [Test]
-    public void Invalid_When_Negative_Number_Given_But_Accepting_Only_Positive_Numbers()
+    public void Invalid_When_NegativeNumberGivenButAcceptingOnlyPositive()
     {
         var validator = new NumberValidator(4, 2, true);
 
@@ -44,7 +44,7 @@ public class NumberValidatorTests
     }
 
     [Test]
-    public void Consider_Number_Positive_When_No_Sign_Given()
+    public void ConsiderNumberPositive_When_NoSignGiven()
     {
         var validator = new NumberValidator(3, 2, true);
 
@@ -52,7 +52,7 @@ public class NumberValidatorTests
     }
 
     [Test]
-    public void Valid_When_Negative_Number_Given_And_Accepting_Not_Only_Positive_Numbers()
+    public void Valid_When_NegativeNumberGivenAndAcceptingNotOnlyPositive()
     {
         var validator = new NumberValidator(4, 2, false);
 
@@ -62,7 +62,7 @@ public class NumberValidatorTests
     [TestCase("-1.00", false, "total length is greater than precision")]
     [TestCase("+1.00", false, "total length is greater than precision")]
     [TestCase("1.00", true, "this time there's no sign, so total length is not greater than precision")]
-    public void Account_Sign_In_Precision(string number, bool result, string explanation)
+    public void AccountSignInPrecision(string number, bool result, string explanation)
     {
         var validator = new NumberValidator(3, 2, true);
 
@@ -70,19 +70,11 @@ public class NumberValidatorTests
     }
 
     [Test]
-    public void Valid_When_Comma_Is_Separator()
+    public void Valid_When_CommaIsSeparator()
     {
         var validator = new NumberValidator(3, 2, true);
 
         validator.IsValidNumber("1,0").Should().Be(true, "comma is a valid separator");
-    }
-
-    [Test]
-    public void Invalid_When_More_Than_One_Separator()
-    {
-        var validator = new NumberValidator(5, 2, true);
-
-        validator.IsValidNumber("1,0.0").Should().Be(false, "there can be only one separator in the number");
     }
 
     [TestCase("", false, "number string is empty")]
@@ -90,44 +82,26 @@ public class NumberValidatorTests
     [TestCase("a.sd", false, "number string contains non-numeric characters")]
     [TestCase("asd", false, "number string contains non-numeric characters")]
     [TestCase("1.O", false, "number string contains non-numeric characters")]
+    [TestCase("1O.1", false, "number string contains non-numeric characters")]
     [TestCase("1 5.5", false, "number string contains whitespace")]
     [TestCase("5.", false, "number is missing fraction")]
     [TestCase(null, false, "type 'null' is not a correct number")]
-    public void Invalid_When_Invalid_Number_String_Given(string number, bool result, string explanation)
+    [TestCase("1,0.0", false, "there can be only one separator in the number")]
+    public void Invalid_When_InvalidNumberStringGiven(string number, bool result, string explanation)
     {
         var validator = new NumberValidator(3, 2, true);
 
         validator.IsValidNumber(number).Should().Be(result, explanation);
     }
 
-    [Test]
-    public void Throw_When_Scale_Is_Negative()
+    [TestCase(-1, 2, "precision must be a positive number")]
+    [TestCase(0, 2, "precision must be a positive number")]
+    [TestCase(1, 2, "scale must be a non-negative number less than precision")]
+    [TestCase(10, -2, "scale must be a non-negative number less than precision")]
+    public void Throw_When_PrecisionOrScaleAreInvalid(int precision, int scale, string because)
     {
-        Action act = () => new NumberValidator(10, -2, true);
+        Action act = () => new NumberValidator(precision, scale, true);
 
-        act.Should()
-            .Throw<ArgumentException>()
-            .WithMessage("precision must be a non-negative number less or equal than precision");
-    }
-
-    [Test]
-    public void Throw_When_Scale_Is_Greater_Than_Precision()
-    {
-        Action act = () => new NumberValidator(1, 2, true);
-
-        act.Should()
-            .Throw<ArgumentException>()
-            .WithMessage("precision must be a non-negative number less or equal than precision");
-    }
-
-    [TestCase(-1)]
-    [TestCase(0)]
-    public void Throw_When_Precision_Is_Not_Positive(int precision)
-    {
-        Action act = () => new NumberValidator(precision, 2, true);
-
-        act.Should()
-            .Throw<ArgumentException>()
-            .WithMessage("precision must be a positive number");
+        act.Should().Throw<ArgumentException>(because);
     }
 }
