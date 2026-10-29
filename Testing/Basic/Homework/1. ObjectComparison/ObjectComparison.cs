@@ -20,9 +20,7 @@ public class ObjectComparison
         actualTsar.Should()
             .BeEquivalentTo(expectedTsar,
             options => options
-                        //.AllowingInfiniteRecursion()
-                        .Excluding(person => person.Id)
-                        .Excluding(person => person.Parent.Id));
+                        .Excluding(person => person.Path.EndsWith("Id")));
     }
 
     [Test]
