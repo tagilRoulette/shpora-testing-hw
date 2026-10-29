@@ -17,10 +17,12 @@ public class ObjectComparison
 
         // Переписанный код с использованием Fluent Assertions.
 
-        actualTsar.Should()
-            .BeEquivalentTo(expectedTsar,
-            options => options
-                        .Excluding(person => person.Path.EndsWith("Id")));
+        actualTsar
+            .Should()
+            .BeEquivalentTo(
+                expectedTsar,
+                config => config.Excluding(info => info.DeclaringType == typeof(Person)
+                    && info.Name == nameof(Person.Id)));
     }
 
     [Test]
@@ -37,8 +39,6 @@ public class ObjectComparison
         // вручную прописывать каждое поле, свойство и сравнивать его с ожидаемым.
         // В моем решении эта проблема решена - FluentAssertions рекурсивно проходит
         // по полям и свойствам объекта, сравнивая их, но игнорирует ID царя и его родителя, как и в исходном коде.
-        // Если династия многолетняя, и царь окажется далее, чем в 10 поколении от своего родоначальника,
-        // то можно включить бесконечную рекурсию, т.к. FluentAssertions не спускается ниже 10 уровня рекурсии.
         ClassicAssert.True(AreEqual(actualTsar, expectedTsar));
     }
 
